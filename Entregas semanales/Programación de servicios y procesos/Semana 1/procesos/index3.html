@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        <script>
+            
+            var trabajador = new Worker("tarea.js");
+            
+            trabajador.onmessage = function(){
+                console.log("el trabajador ha dicho algo")
+            }
+            
+        </script>
+    </body>
+</html>

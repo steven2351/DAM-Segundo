@@ -1,0 +1,84 @@
+/*Estilos generales*/
+body{
+    background:rgb(230,230,230);
+    font-family:sans-serif;
+    text-align:justify; 
+}
+header{
+    width:800px;
+    background:white;
+    margin:auto;
+    height:100px;
+    padding:20px;
+}
+main{
+    width:800px;
+    background:white;
+    margin:auto;
+    height:400px;
+    padding:20px;
+}
+footer{
+    width:800px;
+    background:white;
+    margin:auto;
+    height:100px;
+    padding:20px;
+}
+h1,h2{
+    padding:0px;
+    margin:0px;
+}
+nav ul{
+    list-style:none;
+    padding:0px;
+    margin:0px;
+}
+nav ul li{
+    float:left;
+    padding:5px;
+    margin:0.5px;
+    background:blue;
+    color:white;
+    width: 100px;
+    text-align:center;
+    text-transform:uppercase;
+    font-size:10px;  
+}
+nav ul li a{
+    text-decoration:none;
+    color:inherit;
+}
+nav ul li:first-child{
+    border-radius:5px 0px 0px 5px; 
+}
+nav ul li:last-child{
+    border-radius:0px 5px 5px 0px; 
+}
+/*Estilos página de inicio*/
+#banner{
+    width:100%;
+    height:200px;
+    background:rgb(200,200,200);
+}
+#banner h3,#banner p{
+    padding:20px;
+}
+article{
+    width:33%;
+    float:left;
+}
+article p{
+    padding:10px;
+    text-align:justify; 
+}
+
+/*Estilos del blog*/
+#contienearticulos{
+    width:65%;
+    float:left;
+}
+aside{
+    width:30%;
+    float:right;
+}

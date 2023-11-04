@@ -1,0 +1,84 @@
+<html>
+    <head>
+        <style>
+            body{text-align:center;}
+            #contienecanvas{
+                width:2048px; 
+                height:2048px; 
+                position:relative;
+                float:left; 
+            }
+            #contienecanvas canvas{
+                position:absolute;
+                top:0px;
+                left:0px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="lienzo" width=2048 height=2048></canvas>
+        <div id="contienecanvas">
+            <canvas id="lienzodestino" width=2048 height=2048></canvas>
+            <canvas id="lienzobuckets" width=2048 height=2048></canvas>
+        </div>
+        <script>
+            var anchura = 1;
+            var umbral = 5;
+            var anchurabucket = 64;
+            var anchura = 2048;
+            var altura = 2048;
+            var x = 0;
+            var y = 0;
+            var trabajador = new Array();
+            
+            // Cargamos en el contexto de la imagen en una variable
+            var contexto = document.getElementById("lienzo").getContext("2d")
+            var contextodestino = document.getElementById("lienzodestino").getContext("2d")
+            var contextobuckets = document.getElementById("lienzobuckets").getContext("2d")
+            
+            // Creamos un nuevo objeto de tipo imagen
+            var foto = new Image();
+            // le indicamos cuál es el archivo informático al que corresponde esa imagen
+            foto.src = "yo.jpg";
+            
+            
+            // ejecuta una función con cierto retraso para darle tiempo al programa a cargar la imagen
+            setTimeout(function(){
+                // Calculo el tiempo de inicio
+                const tiempoInicio = Date.now()
+                // dibujo la imagen en el lienzo
+                contexto.drawImage(foto,0,0)
+                
+                var numerotrabajadores = navigator.hardwareConcurrency*8;
+                
+                for(var i = 0;i<numerotrabajadores;i++){
+                    trabajador[i] = new Worker("tarea7.js");                    
+                    trabajador[i].onmessage = function(datos,i){
+                        contextodestino.putImageData(datos.data.resultado,datos.data.mix,datos.data.miy)
+                        x += anchurabucket;
+                        if(x >2048){x = 0;y += anchurabucket;}
+                        if(y < 2048){
+                            bucle(datos.data.miidworker,x,y)
+                        }else{                            
+                            // Calculo el tiempo de finalización 
+                            const tiempoFinal = Date.now()
+                            // Muestro la diferencia del tiempo de finalizacion menos el tiempo de inicio 
+                            console.log("Ha tardado en calcular la imagen "+(tiempoFinal - tiempoInicio))
+                        }
+                    }
+                    bucle(i,x,y)
+                }
+            },2000)
+                function bucle(i,x,y){
+                    var indice = i;
+                    contextobuckets.fillRect(x,y,anchurabucket,anchurabucket)
+                    contextobuckets.clearRect(x+2,y+2,anchurabucket-4,anchurabucket-4)
+                    
+                    var pixeles = contexto.getImageData(x,y,anchurabucket,anchurabucket)
+                    var pixelesdestno = contextodestino.getImageData(0,0,anchurabucket,anchurabucket)
+                    json = {px:pixeles,pxdst:pixelesdestno,mix:x,miy:y,miumbral:umbral,mianchurabucket:anchurabucket,idworker:i}
+                    trabajador[indice].postMessage(json);
+                }
+        </script>
+    </body>
+</html>

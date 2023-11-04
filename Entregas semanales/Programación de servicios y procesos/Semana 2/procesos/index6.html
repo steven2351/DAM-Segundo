@@ -1,0 +1,41 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <canvas id="lienzo" width=2048 height=2048></canvas>
+        <script>
+            // Cargamosnel contexto de la imagen en una variable
+            var contexto = document.getElementById("lienzo").getContext("2d")
+            // Creamos un nuevo objeto de tipo imagen
+            var foto = new Image();
+            // le indicamos cuál es el archivo informático al que corresponde esa imagen
+            foto.src = "yo.jpg";
+            // ejecuta una función con cierto retraso para darle tiempo al programa a cargar la imagen
+            setTimeout(function(){
+                // dibujo la imagen en el lienzo
+                contexto.drawImage(foto,0,0)
+                // Calculo el tiempo de inicio
+                const tiempoInicio = Date.now()
+                
+                //atrapó todos los datos de la imagen en una matriz
+                var pixeles = contexto.getImageData(0,0,2048,2048)
+                
+                // recorro esa imagen cada cuatro bloques porque cautro piezas de contenido representan un pixel
+                for(var i = 0;i<pixeles.data.length;i+=4){
+                    // Invierto el canal rojo de la imagen
+                    pixeles.data[i] = 255-pixeles.data[i];
+                    // Invierto el canal verde de la imagen
+                    pixeles.data[i+1] = 255-pixeles.data[i+1]
+                    // Invierto el canal azul de la imagen
+                    pixeles.data[i+2] = 255-pixeles.data[i+2]
+                }
+                
+                contexto.putImageData(pixeles,0,0)
+                // Calculo el tiempo de finalización 
+                const tiempoFinal = Date.now()
+                // Muestro la diferencia del tiempo de finalizacion menos el tiempo de inicio 
+                console.log("Ha tardado en calcular la imagen "+(tiempoFinal - tiempoInicio))
+            },2000)
+        </script>
+    </body>
+</html>
