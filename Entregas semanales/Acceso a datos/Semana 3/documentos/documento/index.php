@@ -52,6 +52,8 @@
                     <button id="alignright"><img src="../img/bootstrap-icons-1.11.1/text-right.svg" class="icon"></button>
                     <button id="aligncenter"><img src="../img/bootstrap-icons-1.11.1/text-center.svg" class="icon"></button>
                     <button id="alignjustify"><img src="../img/bootstrap-icons-1.11.1/justify-left.svg" class="icon"></button>
+                    <button id="text-indent-left"><img src="../img/bootstrap-icons-1.11.1/text-indent-left.svg" class="icon"></button>
+                    <button id="text-indent-right"><img src="../img/bootstrap-icons-1.11.1/text-indent-right.svg" class="icon"></button>
                 </td>
             </tr>
             <tr>

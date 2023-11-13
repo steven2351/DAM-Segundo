@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <script src="js/jquery.js"></script>
+        <script src="js/jquery-ui.min.js"></script>
+        <link rel="Stylesheet" href="js/jquery-ui.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.structure.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.theme.min.css">
+        <style>
+            
+        </style>
+        <script>
+            $(document).ready(function(){
+                $(".ordenable").sortable();
+                $(".ordenable li").hover(function(){
+                    $(this).find("span").addClass("ui-icon ui-icon-triangle-1-n")
+                },function(){
+                    $(this).find("span").removeClass("ui-icon ui-icon-triangle-1-n")
+                })
+            })
+        </script>
+    </head>
+    <body>
+        <ul class="ordenable">
+            <li>Primer elemento<span></span></li>
+            <li>Segundo elemento<span></span></li>
+            <li>Tercero elemento<span></span></li>
+            <li>Cuarto elemento<span></span></li>
+            <li>Quinto elemento<span></span></li>
+            <li>Sexto elemento<span></span></li>
+        </ul>
+    </body>
+</html>

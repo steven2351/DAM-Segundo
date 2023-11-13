@@ -1,0 +1,41 @@
+*{
+    margin:0px;
+    padding:0px;
+    font-family:sans-serif;
+}
+#contenedor{
+    padding:20px;
+}
+select{
+    width:100%;
+    padding-top:5px;
+    padding-bottom:5px;
+    margin-top:5px;
+    margin-bottom:5px;
+}
+#sql{
+    background:black;
+    color:white;
+    padding:20px;
+    font-family:monospace; 
+}
+#seleccionacampos{
+    columns:3;
+    padding:20px;
+}
+input[type="checkbox"]{
+    padding:5px;
+    margin-top:5px;
+    margin-right:5px;
+}
+table{margin-top:20px;}
+table th{
+    background:grey;
+    color:white;
+}
+table tr:nth-child(odd){
+    background:rgb(230,230,230); 
+}
+table tr td{
+    padding:10;
+}

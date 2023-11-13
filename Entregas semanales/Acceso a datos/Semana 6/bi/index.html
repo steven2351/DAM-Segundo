@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+        crossorigin="anonymous"></script>
+        <script src="js/codigo.js"></script>
+        <link rel="Stylesheet" href="css/estilo.css">
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <div id="contenedor">
+            <div id="selecciontabla">
+                <h1>1.-Selección de la tabla</h1>
+                <p>Seleccionamos la tabla principal sobre la que hay que operar</p>
+                <select id="seleccionatabla">
+                    <option>Selecciona una tabla</option>
+                </select>
+            </div>
+            <div id="seleccioncampos">
+                <h1>2.-Selección de los campos que quieres ver en el informe</h1>
+                <p>Seleccionamos los campos que queremos que intervengan en nuestro informe</p>
+                <div id="seleccionacampos">
+                    
+                </div>
+            </div>
+            <div id="seleccionalias">
+                <h1>3.-Selección de los alias por campo</h1>
+                <p>Seleccionamos los nombres de columna que queremos que aparezcan (opcional)</p>
+                <table id="seleccionaalias" colpadding = 0 colspacing = 0 cellpadding = 0 cellspacing = 0 width=100%>
+                    
+                </table>
+            </div>
+            <div id="seleccioncondiciones">
+                <h1>4.-Selección de las condiciones</h1>
+                <p>Introducimos condiciones para los campos que hemos seleccionado</p>
+                <table id="seleccionacondiciones" colpadding = 0 colspacing = 0 cellpadding = 0 cellspacing = 0 width=100%>
+                    
+                </table>
+            </div>
+            <div id="seleccionlimite">
+                <h1>5.-Selección del límite</h1>
+                <p>Podemos limitar la cantidad de registros que nos proporciona el informe</p>
+                <div id="seleccionalimite">
+                    <input type="number" id="limite">
+                </div>
+            </div>
+            
+            <div id="sql"></div>
+            <div id="resultadostabla"></div>
+            <div id="resultadosgrafica"></div>
+        </div>
+    </body>
+</html>

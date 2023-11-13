@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            html,body{padding:0px;margin:0px;overflow:hidden;}
+            canvas{border:1px solid black;
+            image-rendering: optimizespeed;                     /*Stop smooothing, give me speed*/
+            image-rendering: -moz-crisp-edges;                  /* Firefox      */
+            image-rendering: -o-crisp-edges;                    /* Opera      */
+            image-rendering: -webkit-optimize-contrast;         /* Chrome(and eventually Safari)      */
+            image-rendering: pixelated;                         /* Chrome      */
+            image-rendering: optimize-contrast;                 /* CSS3 Proposed      */
+            -ms-interpolation-mode: nearest-neighbor;           /* IE8+      */
+            }
+            #ststats{
+                position:absolute;
+                top:0px;
+                left:0px;
+                background:black;
+            }
+            #ststats2{
+                position:absolute;
+                top:0px;
+                left:0px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas width=512px height=512px id="lienzo"></canvas>
+        <div id="contieneststats">
+            <canvas width=64px height=32px id="ststats"></canvas>
+            <canvas width=64px height=32px id="ststats2"></canvas>
+        </div>
+        <script>
+            var anchura = window.innerWidth;
+            var altura = window.innerHeight;
+            document.getElementById("lienzo").width = anchura;
+            document.getElementById("lienzo").height = altura;
+            var contexto = document.getElementById("lienzo").getContext("2d");
+            var contextoststats = document.getElementById("ststats").getContext("2d");
+            var contextoststats2 = document.getElementById("ststats2").getContext("2d");
+            
+            //carga inicial de pixeles negros
+            contexto.fillStyle = "rgb(255,255,255)"
+            contexto.fillRect(0,0,anchura,altura)
+            var datoscanvas = contexto.getImageData(0,0,anchura,altura)
+            var pixel = new Array();
+            for(var i = 0; i < datoscanvas.data.length;i++){
+                if(Math.random() < 0.2){
+                    pixel.push(1)
+                }else{
+                    pixel.push(0)
+                }
+            }
+            contexto.putImageData(datoscanvas,0,0)
+            contextoststats.font = "10px Arial";
+            contextoststats.fillStyle = "black"
+            contextoststats.fillRect(0,0,64,32)
+            var ststatstiempoinicio = 0;
+            var ststatstiempofinal = 0;
+            var temporizador = setTimeout("bucle()",1000);
+            function bucle(){
+                ststatstiempoinicio = Date.now();
+                // Primero cojo la información que tengo
+                var pixeltemp = pixel.slice();
+                
+                for(var i = 0; i < datoscanvas.data.length;i++){
+                    var numerovivas = 0;
+                    numerovivas += pixeltemp[i-anchura-1]; 
+                    numerovivas += pixeltemp[i-anchura]; 
+                    numerovivas += pixeltemp[i-anchura+1]; 
+                    numerovivas += pixeltemp[i-1]; 
+                    numerovivas += pixeltemp[i+1]; 
+                    numerovivas += pixeltemp[i+anchura-1]; 
+                    numerovivas += pixeltemp[i+anchura]; 
+                    numerovivas += pixeltemp[i+anchura+1]; 
+                    
+                    if(pixeltemp[i] == 0){
+                        if(numerovivas == 3){
+                            pixel[i] = 1;
+                        }else{
+                            pixel[i] = 0;
+                        }
+                    }else{
+                       if(numerovivas == 2 || numerovivas == 3){
+                            pixel[i] = 1;
+                        }else{
+                            pixel[i] = 0;
+                        } 
+                    }
+                    datoscanvas.data[i*4] = 255-pixel[i]*255
+                    datoscanvas.data[i*4+1] = 255-pixel[i]*255
+                    datoscanvas.data[i*4+2] = 255-pixel[i]*255
+                    datoscanvas.data[i*4+3] = 255
+                }                
+                contexto.putImageData(datoscanvas,0,0)
+                ststatstiempofinal = Date.now();
+                var fps = Math.round(1000/(ststatstiempofinal - ststatstiempoinicio))
+                if(fps >= 30){contextoststats.fillStyle = "green"}
+                if(fps < 30){contextoststats.fillStyle = "yellow"}
+                if(fps < 10){contextoststats.fillStyle = "red"}
+                contextoststats.fillRect(62,30,1,0-fps/5)
+                var datos = contextoststats.getImageData(2,1,64,30)
+                contextoststats.putImageData(datos,1,1)
+                contextoststats2.clearRect(0,0,64,32)
+                contextoststats2.fillStyle = "white"
+                contextoststats2.fillText(fps+" fps", 3, 25)
+                clearTimeout(temporizador);
+                temporizador = setTimeout("bucle()",0);
+            }
+        </script>
+    </body>
+</html>

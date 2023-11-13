@@ -24,14 +24,24 @@
                             cadena += '<div>'
                             contenido = $(categorias[i]).find("instruction")
                             for(var j = 0;j<contenido.length;j++){
-                                cadena += '<li>'+contenido[j].innerHTML+'</li>'
+                                cadena += '<p>'+contenido[j].innerHTML+'</p>'
                             }
                             cadena += '</div>'
                             $("#biblioteca").append(cadena)
                         }
-                        setTimeout(function(){
                             $("#biblioteca").accordion();
-                        },1000)
+                        for(var i = 0;i<categorias.length;i++){
+                            $("#parametros").append('<h3>'+$(categorias[i]).attr("id")+'</h3>')
+                            cadena = ''
+                            cadena += '<div>'
+                            contenido = $(categorias[i]).find("instruction")
+                            for(var j = 0;j<contenido.length;j++){
+                                cadena += '<p>'+contenido[j].innerHTML+'</p>'
+                            }
+                            cadena += '</div>'
+                            $("#parametros").append(cadena)
+                        }
+                            $("#parametros").accordion();
                     },error:function(err){
                         console.log(err)
                     }
@@ -53,8 +63,6 @@
                     })
                 }
                 $("#tabs").tabs();
-                $("#biblioteca").accordion();
-                $("#parametros").accordion();
                 $("#menu").menu();
                 $(".nodo").draggable({
                     start: function(){

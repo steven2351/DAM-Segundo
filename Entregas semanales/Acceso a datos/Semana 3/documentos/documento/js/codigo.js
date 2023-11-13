@@ -11,7 +11,8 @@ $(document).ready(function(){
     })                   
     $("#fontcolor").change(function(){
         $("#pagina").append("<span style='color:"+$(this).val()+"'>"+$(this).val()+"</span>")
-    })                   
+    })   
+                      
     $("#alignleft").click(function(){
         $("#pagina").append("<div style='text-align:left'>Buenas esto es para probar si funciona las colocaciones para los textos y si funcionan me olvidare de tocar mas este texto, sino tendre que seguir mirando que es lo que falla</div>")
     })                   
@@ -23,6 +24,12 @@ $(document).ready(function(){
     })                   
     $("#alignjustify").click(function(){
         $("#pagina").append("<div style='text-align:justify'>Buenas esto es para probar si funciona las colocaciones para los textos y si funcionan me olvidare de tocar mas este texto, sino tendre que seguir mirando que es lo que falla</div>")
+    })
+    $("#text-indent-left").click(function(){
+        $("#pagina").append("<div style='text-indent:60px'>Buenas esto es para probar si funciona las colocaciones para los textos y si funcionan me olvidare de tocar mas este texto, sino tendre que seguir mirando que es lo que falla</div>")
+    })
+    $("#text-indent-right").click(function(){
+        $("#pagina").append("<div style='text-indent:-60px'>Buenas esto es para probar si funciona las colocaciones para los textos y si funcionan me olvidare de tocar mas este texto, sino tendre que seguir mirando que es lo que falla</div>")
     })
     $("#bold").click(function(){
         $("#pagina").append("<span style='font-weight:bold'>Negrita</span>")

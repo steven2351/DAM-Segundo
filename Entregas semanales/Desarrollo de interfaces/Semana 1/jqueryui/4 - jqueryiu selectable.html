@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <script src="js/jquery.js"></script>
+        <script src="js/jquery-ui.min.js"></script>
+        <link rel="Stylesheet" href="js/jquery-ui.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.structure.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.theme.min.css">
+        <style>
+            ul{list-style-type:none;padding:0px;margin:0px;}
+            li{width:400px;border:1px solid grey;padding:10px;}
+            .ui-selected{color:white;background:green;}
+        </style>
+        <script>
+            $(document).ready(function(){
+                 $(".seleccionable").selectable();
+            })
+        </script>
+    </head>
+    <body>
+        <ul class="seleccionable">
+            <li>Uno</li>
+            <li>Dos</li>
+            <li>Tres</li>
+        </ul>
+    </body>
+</html>

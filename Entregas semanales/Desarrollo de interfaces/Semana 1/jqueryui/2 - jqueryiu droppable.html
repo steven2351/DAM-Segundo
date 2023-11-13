@@ -1,0 +1,46 @@
+<html>
+    <head>
+        <script src="js/jquery.js"></script>
+        <script src="js/jquery-ui.min.js"></script>
+        <link rel="Stylesheet" href="js/jquery-ui.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.structure.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.theme.min.css">
+        <style>
+            #mueveme{
+                width:200px;
+                height:200px;
+                background:blue;
+            }
+            #mueveme2{
+                width:200px;
+                height:200px;
+                background:black;
+            }
+            #destino{
+                width:500px;
+                height:500px;
+                border:1px solid grey;
+            }
+        </style>
+        <script>
+            $(document).ready(function(){
+                $(".movible").draggable({opacity:0.5})
+                $("#destino").droppable({
+                    drop:function(event,ui){
+                        //console.log(event)
+                        console.log(ui.draggable[0].getAttribute("id"))
+                        //console.log("lanzado")
+                        $("#"+ui.draggable[0].getAttribute("id")).css("border","5px solid yellow")
+                        $(this).css("background","green")
+                    }
+                });
+                
+            })
+        </script>
+    </head>
+    <body>
+        <div id="mueveme" class="movible"></div>
+        <div id="mueveme2" class="movible"></div>
+        <div id="destino"></div>
+    </body>
+</html>

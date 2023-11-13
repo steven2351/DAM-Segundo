@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <script src="js/jquery.js"></script>
+        <script src="js/jquery-ui.min.js"></script>
+        <link rel="Stylesheet" href="js/jquery-ui.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.structure.min.css">
+        <link rel="Stylesheet" href="js/jquery-ui.theme.min.css">
+        <style>
+            #redimensioname{
+                width:300px;
+                height:300px;
+                border:1px solid grey;
+                padding:10px;
+                outline:none;
+                font-family:sans-serif;
+            }
+        </style>
+        <script>
+            $(document).ready(function(){
+                $("#redimensioname").draggable()  
+                $("#redimensioname").resizable()  
+            })
+        </script>
+    </head>
+    <body>
+        <div id="redimensioname" contenteditable="true"><b>Hola</b> Adios</div>
+    </body>
+</html>
