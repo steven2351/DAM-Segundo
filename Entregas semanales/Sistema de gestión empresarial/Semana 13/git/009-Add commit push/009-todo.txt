@@ -1,0 +1,5 @@
+git add piedrapapelotijeras.py
+
+git commit -m "Comprobación del ganador"
+
+git push origin ganador

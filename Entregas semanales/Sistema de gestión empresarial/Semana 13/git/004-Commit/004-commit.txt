@@ -1,0 +1,5 @@
+git commit -m "Primera version de mi proyecto"
+
+gti add piedrapapelotijeras.py
+
+git commit -m "Segunda version - decimos lo que saca la maquina"

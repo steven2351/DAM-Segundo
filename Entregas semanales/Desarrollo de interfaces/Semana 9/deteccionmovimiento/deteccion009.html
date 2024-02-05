@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <title>Detección de movimiento</title>
+    </head>
+    <body>
+        <canvas id="lienzo" width="640px" height="480px"></canvas>
+        <video id="video" autoplay></video>
+        <script>
+            const video = document.getElementById("video");
+            const lienzo = document.getElementById("lienzo");
+            const contexto = lienzo.getContext("2d");
+            const paso = 32;
+            var pixelesviejos = [];
+            var pixelesnuevos = [];
+            navigator.mediaDevices.getUserMedia({video:true})
+                .then(function(flujo){
+                video.srcObject = flujo;
+            })
+            .catch(function(error){
+                console.log("error: "+error)
+            })
+            
+            function videoALienzo(){
+                contexto.drawImage(video,0,0,lienzo.width,lienzo.height)
+                pixelesviejos = pixelesnuevos
+                pixelesnuevos = [];
+                console.log(pixel.data[0])
+                for(let x = 0;x<640;x+=paso){
+                    for(let y = 0;y<480;y+=paso){
+                        let pixel = contexto.getImageData(x,y,1,1);
+                        pixelesnuevos.push(pixeles.data)
+                    }
+                }
+                console.log(pixelesnuevos)
+                requestAnimationFrame(videoALienzo)
+            }
+            
+            video.addEventListener('play',function(){
+                videoALienzo()
+            })
+        </script>
+    </body>
+</html>

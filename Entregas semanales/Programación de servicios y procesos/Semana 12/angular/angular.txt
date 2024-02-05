@@ -1,0 +1,23 @@
+npm install -g @angular/cli
+
+cd ../cursoangular
+
+ng new primerproyecto > CSS
+
+cd primerproyecto
+
+ng serve -open
+
+ng build
+
+cd ../cursoangular
+
+ng new segundoproyecto --standalone=false > CSS
+
+ng generate component cabecera
+ng generate component principal
+ng generate component piedepagina
+ng generate component pancarta
+ng generate component destacados
+
+ng build
