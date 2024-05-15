@@ -12,12 +12,13 @@ servidor.createServer(function(req,res){
                if(err) throw err
                 res.end(data)
             });
-       }
+        }
         else if(req.url == "/recibe"){
            console.log("recibe");
             res.writeHead(200,{'Content-Type':'text/json'});
             res.end(JSON.stringify(mensajes))
-        }else if(req.url.includes("/envia")){
+        }
+        else if(req.url.includes("/envia")){
            console.log("envía");
             var parametros = ruta.parse(req.url,true).query;
             console.log(parametros.mensaje)

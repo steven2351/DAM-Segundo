@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpkEaseX</title>
+    <link rel="stylesheet" href="css/styles3.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">         
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/opus-recorder/8.0.5/recorder.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <button class="add-friend-button"><i class="fa-solid fa-user-plus"></i></button>
+            <div class="user-list">
+                
+               
+            </div>
+            <div class="context-menu" id="contextMenu">
+                <div class="context-menu-item" id="logoutOption">Cerrar sesión</div>
+            </div>
+            <div class="user-selected">
+                <div class="user">
+                    <div class="avatar"></div>
+                    <span class="username"><%= name %></span>
+                </div>
+            </div>
+            
+        </div>
+        <div class="chat">
+            <div class="call-bar">
+                <button class="call-button"><i class="fa-solid fa-phone-volume"></i></button>
+                <button class="video-call-button"><i class="fa-solid fa-video"></i></button>
+            </div>
+            <div class="message-box">
+                <!-- Aquí se agregarán los mensajes -->
+               
+                <!-- Agrega más mensajes según sea necesario -->
+            </div>
+            <form id="form">
+                <div class="message-input">
+                    <div id="file-preview" style="display: none;">
+                        <div class="file-preview-container">
+                            <img id="file-icon" src="" alt="Icono de archivo">
+                            <span id="file-name"></span>
+                        </div>
+                    </div>
+                    <input id="file-input" type="file" style="display: none;"> <!-- Botón de selección de archivos oculto -->
+                    <label for="file-input" id="file-label" style="margin-left:5px;"><i class="fa-sharp fa-solid fa-paperclip"></i></label> <!-- Etiqueta para el botón visible -->
+                    <input id="input" type="text" placeholder="Escribe tu mensaje aquí...">
+                    <button id="send-button" type="submit">Enviar</button>
+                </div>
+            </form>
+        </div>
+                        
+            <script >
+                document.addEventListener('DOMContentLoaded', () => {
+                    // Obtener el nombre de usuario principal
+                    const usernamePrincipal = document.querySelector('.user-selected .username').textContent;
+                    
+                    const userElement = document.querySelector('.user-selected .username');
+                    const contextMenu = document.getElementById('contextMenu');
+                    const logoutOption = document.getElementById('logoutOption');
+
+                    // Mostrar menú contextual al hacer clic izquierdo en el nombre de usuario
+                    userElement.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const x = event.clientX;
+                        const y = event.clientY;
+                        contextMenu.style.display = 'block';
+                        contextMenu.style.left = `${x}px`;
+                        contextMenu.style.top = `${y}px`;
+                    });
+
+                    // Ocultar menú contextual al hacer clic en cualquier parte del documento
+                    document.addEventListener('click', (event) => {
+                        if (event.target !== userElement && event.target !== logoutOption) {
+                            contextMenu.style.display = 'none';
+                        }
+                    });
+
+                    // Manejar clic en opción de logout
+                    logoutOption.addEventListener('click', () => {
+                        // Realizar acción de logout
+                        window.location.href = '/logout'; // Redirigir a la página de logout
+                    });
+                    
+                    const form = document.getElementById('form')
+                    const input = document.getElementById('input')
+                    const messages = document.querySelector('.message-box')
+                    let conversacionId = null; // Variable para almacenar el resultado de conversacion_id
+                    
+                    const socket = io({
+                                      auth: {
+                                        username: usernamePrincipal
+                                      }
+                                    });
+                    
+                    // Escucha el evento 'connect'
+                    socket.on('connect', () => {
+                        console.log('Conexión establecida con el servidor');
+                    });
+                    
+                    // Obtener la lista de usuarios
+                    const userList = document.querySelector('.user-list');
+
+                    // Variable para almacenar el nombre de la sala anterior
+                    let salaAnterior = '';
+                    let roomName = '';
+                    let contactoUsername = '';
+
+                    // Adjuntar evento de clic a cada elemento de la lista de usuarios
+                    userList.addEventListener('click', event => {
+                        if (event.target.classList.contains('user')) {
+                            // Mostrar la barra de llamadas y el área de entrada de mensajes
+                            document.querySelector('.call-bar').style.display = 'block';
+                            document.querySelector('.message-input').style.display = 'flex';
+
+                            contactoUsername = event.target.querySelector('.username').textContent;
+                            
+                            const users = [usernamePrincipal, contactoUsername]; // Actualizar la lista de usuarios
+                            // Ordenar los nombres alfabéticamente
+                            const sortedUsernames = users.sort();
+                            
+                            // Crear el nombre de la sala concatenando los nombres ordenados
+                            roomName = sortedUsernames.join('&');
+                            
+                            cargarMensajes(usernamePrincipal, contactoUsername);
+                            
+                            conversacion_id(usernamePrincipal, contactoUsername);
+
+                            // Dejar la sala anterior antes de unirse a la nueva sala
+                            if (salaAnterior !== '') {
+                                socket.emit('leaveRoom', { roomId: salaAnterior });
+                            }
+                            
+                            setTimeout(() => {
+                                // Unirse a una sala específica
+                                socket.emit('joinRoom', { roomId: roomName });
+
+                                // Actualizar el nombre de la sala anterior
+                                salaAnterior = roomName; 
+                                console.log(roomName);
+                            }, 1000);
+                        }
+                    });
+                    
+//                    
+                    socket.on('chat message', ({ mensaje, username, horaActual, file, fileName, fileType }) => {
+                        let messageClass = 'user1'; // Por defecto, asigna la clase 'user1' (o el estilo deseado) al mensaje
+                        const separators = document.querySelectorAll('.separator');
+
+                        // Verifica si el mensaje proviene del usuario principal
+                        if (username === usernamePrincipal) {
+                            messageClass = 'user1'; // Asigna la clase 'user1' para los mensajes del usuario 1
+                        } else {
+                            messageClass = 'user2'; // Asigna la clase 'user2' para los mensajes de otros usuarios
+                        }
+
+                        const fechaEnvio = new Date(horaActual);
+                        const dia = fechaEnvio.getDate();
+                        const numeroMes = fechaEnvio.getMonth();
+                        const año = fechaEnvio.getFullYear();
+
+                        // Formatear la fecha como una cadena legible
+                        const fechaFormateada = `${dia} de ${nombresMeses[numeroMes]} de ${año}`;
+
+                        // Itera sobre cada elemento y lee su contenido
+                        let fechaPresente = false;
+                        separators.forEach(separator => {
+                            if (separator.textContent === fechaFormateada) {
+                                fechaPresente = true;
+                            }
+                        });
+
+                        // Si la fecha no está presente, agrégala a la lista de separadores
+                        if (!fechaPresente) {
+                            const divSeparador = `<br><p class="separator">${fechaFormateada}</p><br>`;
+                            messages.insertAdjacentHTML('beforeend', divSeparador);
+                        }                              
+
+                        // Obtener los componentes de la hora
+                        const horas = fechaEnvio.getHours().toString().padStart(2, '0'); // Obtener las horas en formato de dos dígitos
+                        const minutos = fechaEnvio.getMinutes().toString().padStart(2, '0'); // Obtener los minutos en formato de dos dígitos
+                        const segundos = fechaEnvio.getSeconds().toString().padStart(2, '0'); // Obtener los segundos en formato de dos dígitos
+
+                        // Formatear la hora como una cadena HH:mm:ss
+                        const horaFormateada = `${horas}:${minutos}:${segundos}`; 
+
+                        // Construye el elemento del mensaje con la clase correspondiente
+                        const item = `
+                            <div class="message ${messageClass}">
+                                <h4 class="content">
+                                    <p class="mensaje">${mensaje}</p>
+                                    <br><p class="timestamp">${horaFormateada}</p>
+                                </h4>
+                            </div>
+                        `;
+
+                        messages.insertAdjacentHTML('beforeend', item);
+
+                        if (file) {
+                            const fileLink = document.createElement('a');
+                            fileLink.href = file;
+                            fileLink.download = fileName;
+                            fileLink.textContent = `Descargar ${fileName}`;
+                            fileLink.className = 'file-download';
+
+                            const messageElement = document.querySelector(`.message.${messageClass}:last-child .content`);
+
+                            // Inserta el enlace del archivo antes de la fecha
+                            const timestampElement = messageElement.querySelector('.timestamp');
+                            messageElement.insertBefore(document.createElement('br'), timestampElement);
+                            messageElement.insertBefore(fileLink, timestampElement);
+                        }
+
+
+                        messages.scrollTop = messages.scrollHeight;
+                    });
+                    
+                    // Al hacer clic en el botón de llamada
+                    document.querySelector('.call-button').addEventListener('click', () => {
+                       if(roomName != ''){
+                            socket.emit('startCall', roomName, contactoUsername); // Emitir evento para iniciar la llamada en la sala
+                        }
+                    });
+                    
+                    // Al hacer clic en el botón de llamada
+                    document.querySelector('.video-call-button').addEventListener('click', () => {
+                       if(roomName != ''){
+                            socket.emit('startVideoCall', roomName, contactoUsername); // Emitir evento para iniciar la llamada en la sala
+                        }
+                    });
+                    
+                    socket.on('callStarted', (username, contactoUsername) => {
+                        // Mostrar el callbar de manera más prominente
+                        const callBar = document.querySelector('.call-bar');
+                        callBar.style.padding = '30px'; // Aumentar el relleno para que sea más visible
+                        callBar.style.textAlign = 'center'; // Alinear el texto en el centro
+                        callBar.style.display = "inline-table";
+
+                        // Mostrar los avatares y nombres de los participantes en el centro del callbar
+                        const participantsContainer = document.createElement('div');
+                        // Añadir avatares y nombres de los participantes
+                        const participant1 = createParticipantElement(username); // Reemplaza 'Usuario 1' y 'avatar1.jpg' con los datos reales
+                        const participant2 = createParticipantElement(contactoUsername); // Reemplaza 'Usuario 2' y 'avatar2.jpg' con los datos reales
+                       
+                        // Agregar los botones de colgar, silenciar y ensordecer debajo de los avatares y nombres
+                        
+                        const muteButton = createMuteButton();
+                        const hangupButton = createHangupButton();       
+
+                        // Limpiar el contenido actual del callbar y agregar el contenedor de participantes
+                        callBar.innerHTML = '';
+                        callBar.appendChild(participantsContainer);
+                        callBar.appendChild(participant1);
+                        callBar.appendChild(participant2);
+                        callBar.appendChild(hangupButton); 
+                        callBar.appendChild(muteButton);
+                        
+                        
+                        startAudioCapture(); 
+                    });
+                    
+                    // Manejador del evento 'callFinished'
+                    socket.on('callFinished', (username) => {
+                        console.log("Colgó " + username);
+                        stopRecording();
+                        // Mostrar el callbar de manera más prominente
+                        const callBar = document.querySelector('.call-bar');
+                        if (callBar) {
+                            // Aplicar estilos al contenedor
+                            callBar.style.backgroundColor = '#36393f';
+                            callBar.style.padding = '15px';
+                            callBar.style.height = '50px';
+                            callBar.style.textAlign = 'right';
+                            callBar.style.display = 'flow';
+                            callBar.style.alignItems = 'center';
+                            // Limpiar el contenido existente y agregar el nuevo HTML
+                            callBar.innerHTML = `
+                                <button class="call-button"><i class="fa-solid fa-phone-volume"></i></button>
+                                <button class="video-call-button"><i class="fa-solid fa-video"></i></button>
+                            `;
+                            
+                             // Al hacer clic en el botón de llamada
+                            document.querySelector('.call-button').addEventListener('click', () => {
+                               if(roomName != ''){
+                                    socket.emit('startCall', roomName, contactoUsername); // Emitir evento para iniciar la llamada en la sala
+                                }
+                            });
+
+                            // Al hacer clic en el botón de llamada
+                            document.querySelector('.video-call-button').addEventListener('click', () => {
+                               if(roomName != ''){
+                                    socket.emit('startVideoCall', roomName, contactoUsername); // Emitir evento para iniciar la llamada en la sala
+                                }
+                            });
+                        } else {
+                            console.error('No se encontró el contenedor .call-bar en el DOM.');
+                        }
+                    });
+                    
+                    socket.on('videocallStarted', (username) => {
+                        console.log("Inició la videollamada con " + username);
+                        // Aumentar el tamaño del callBar y centrarlo
+                        const callBar = document.querySelector('.call-bar');
+                        if (callBar) {
+                            callBar.style.backgroundColor = '#36393f';
+                            callBar.style.height = '500px';
+                            callBar.style.textAlign = 'center'; // Centrar el contenido
+                            callBar.style.display = 'flex'; // Usar flexbox para centrar verticalmente
+                            callBar.style.alignItems = 'center';
+                            callBar.style.justifyContent = 'flex-end'; // Espacio uniforme entre los elementos hijos
+                            
+                            callBar.style.flexDirection = 'column'; // Alinear elementos verticalmente
+                            // Limpiar el contenido existente y agregar nuevo HTML para la videollamada
+                            callBar.innerHTML = `
+                                <div class="video-container">
+                                    <video id="localVideo" autoplay muted style="transform: scaleX(-1);"></video>
+                                    <canvas id="remoteVideo"></canvas>
+                                    <canvas id="preview" style="display:none;"></canvas>
+                                    <img id="play" src="" style="display:none;" alt="">
+                                </div>
+                                <div class="call-buttons">
+                
+                                </div>
+                            `;
+                            const callButtons = document.querySelector('.call-buttons');
+                            const muteButton = createMuteButton();
+                            const hangupButton = createHangupButton();     
+                            callButtons.appendChild(hangupButton); 
+                            callButtons.appendChild(muteButton);
+                            // Iniciar la captura de audio y video del usuario local
+                            startMediaStream();
+                        }
+                    });
+
+                    // Función para iniciar la transmisión de video local
+                    // Variables globales
+                    let audioContext = null, analyser, audioSource, audioStream, isSpeaking = false, isMuted = false;
+                    let recorder, stream, recordervideo;
+
+async function startMediaStream() {
+    try {
+        const constraints = { video: true, audio: true };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        if (!stream) {
+            console.error('No se pudo capturar el stream de medios.');
+            return;
+        }
+
+        const localVideo = document.getElementById('localVideo');
+        if (!localVideo) {
+            console.error('No se encontró el elemento de vídeo local.');
+            return;
+        }
+        localVideo.srcObject = stream;
+
+        // Iniciar la captura de audio
+        startAudioCapture(stream);
+
+        // Enviar el stream a través del socket
+        setInterval(() => {
+            const videoTrack = stream.getVideoTracks()[0];
+            const imageCapture = new ImageCapture(videoTrack);
+
+            imageCapture.grabFrame().then((bitmap) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+                canvas.getContext('2d').drawImage(bitmap, 0, 0);
+                    socket.emit('mediaStream', { data: canvas.toDataURL('image/webp'), roomId: roomName, username: usernamePrincipal });
+            }).catch(error => console.error('Error al capturar el frame de video:', error));
+        }, 30);
+    } catch (error) {
+       console.error('Error al iniciar el stream de medios:', error);
+    }
+}
+
+// Manejar la recepción del stream de medios
+socket.on('mediaStreamReceived', (data, username) => {
+    if (username !== usernamePrincipal) {
+       playReceivedMedia(data);
+    } else {
+       playPreview(data);
+    }
+});
+
+// Fuznción para reproducir el mediaStream recibido de otro usuario
+function playReceivedMedia(mediaData) {
+    if (!mediaData) {
+       return;
+    }
+
+    const canvas = document.getElementById('remoteVideo');
+    const context = canvas.getContext('2d');
+    context.width = canvas.width;
+    context.height = canvas.height;
+
+    const img = new Image();
+    img.src = mediaData;
+    img.onload = () => {
+        context.drawImage(img, 0, 0, context.width, context.height);
+    };
+}
+
+// Función para reproducir la vista previa del mediaStream del usuario principal
+function playPreview(mediaData) {
+    if (!mediaData) {
+        return;
+    }
+
+    const canvas = document.getElementById('preview');
+    const context = canvas.getContext('2d');
+    context.width = canvas.width;
+    context.height = canvas.height;
+
+    const img = new Image();
+    img.src = mediaData;
+    img.onload = () => {
+        context.drawImage(img, 0, 0, context.width, context.height);
+    };
+}
+                    
+                    // Función para iniciar la captura de audio
+                    function startAudioCapture() {
+                        if (!audioContext) {
+                            navigator.mediaDevices.getUserMedia({ audio: true })
+                                .then(stream => {
+                                    audioContext = new AudioContext();
+                                    audioSource = audioContext.createMediaStreamSource(stream);
+                                    audioStream = stream; // Guardar el stream para la grabación
+                                    analyser = audioContext.createAnalyser();
+                                    audioSource.connect(analyser);
+                                    startAudioStream();
+                                })
+                                .catch(err => console.error('Error al capturar audio del micrófono:', err));
+                        } else {
+                            startAudioStream();
+                        }
+                    }
+
+                    // Función para iniciar la transmisión de audio cuando se detecta actividad de audio
+                    function startAudioStream() {
+                        const audioThreshold = 40; // Ajustar según sea necesario
+
+                        sendAudioInterval = setInterval(() => {
+                            const bufferLength = analyser.frequencyBinCount;
+                            const dataArray = new Uint8Array(bufferLength);
+                            analyser.getByteFrequencyData(dataArray);
+                            const audioLevel = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
+
+                            if (audioLevel > audioThreshold && !isMuted) {
+                                if (!isSpeaking) {
+                                    isSpeaking = true;
+                                    addBorderToAvatar();
+                                    startRecording();
+                                }
+                            } else {
+                                if (isSpeaking) {
+                                    isSpeaking = false;
+                                    removeBorderFromAvatar();
+                                    stopRecording();
+                                }
+                            }
+                        }, 50);
+                    }
+
+                    // Función para iniciar la grabación de audio
+                    function startRecording() {
+                        let chunks = []; // Limpiar los chunks para una nueva grabación
+                        mediaRecorder = new MediaRecorder(audioStream);
+
+                        mediaRecorder.ondataavailable = event => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const audioData = reader.result;
+                                socket.emit('audioStream', { stream: audioData, roomId: roomName });
+                            };
+                            reader.readAsArrayBuffer(event.data);
+                        };
+
+                        mediaRecorder.start();
+                    }
+
+                    // Función para detener la grabación de audio
+                    function stopRecording() {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }
+                    // Función para añadir borde al avatar
+                    function addBorderToAvatar() {
+                        const separators = document.querySelectorAll('.name');
+                        separators.forEach(separator => {
+                            if (separator.textContent === usernamePrincipal) {
+                                const participantContainer = separator.closest('.participant');
+                                const avatar = participantContainer.querySelector('.avatar2');
+                                if (avatar) {
+                                    // Añadir borde al avatar
+                                    avatar.style.border = '3px solid green';
+                                }
+                            }
+                        });
+                    }
+
+                    // Función para eliminar borde del avatar
+                    function removeBorderFromAvatar() {
+                        const separators = document.querySelectorAll('.name');
+                        separators.forEach(separator => {
+                            if (separator.textContent === usernamePrincipal) {
+                                const participantContainer = separator.closest('.participant');
+                                const avatar = participantContainer.querySelector('.avatar2');
+                                if (avatar) {
+                                    // Eliminar borde del avatar
+                                    avatar.style.border = '';
+                                }
+                            }
+                        });
+                    }
+
+                    // Función para añadir borde al avatar
+                    function addBorderToConctact() {
+                        const separators = document.querySelectorAll('.name');
+                        separators.forEach(separator => {
+                            if (separator.textContent === contactoUsername) {
+                                const participantContainer = separator.closest('.participant');
+                                const avatar = participantContainer.querySelector('.avatar2');
+                                if (avatar) {
+                                    // Añadir borde al avatar
+                                    avatar.style.border = '3px solid green';
+                                }
+                            }
+                        });
+                    }
+
+                    // Función para eliminar borde del avatar
+                    function removeBorderFromConctact() {
+                        const separators = document.querySelectorAll('.name');
+                        console.log(contactoUsername);
+                        separators.forEach(separator => {
+                            if (separator.textContent === contactoUsername) {
+                                const participantContainer = separator.closest('.participant');
+                                const avatar = participantContainer.querySelector('.avatar2');
+                                if (avatar) {
+                                    avatar.style.border = '';
+                                }
+                            }
+                        });
+                    }
+
+
+                    // Escuchar el evento 'audioReceived' desde el servidor
+                    socket.on('audioReceived', (stream, username) => {
+
+                        // Reproducir el audio recibido solo si no fue enviado por el usuario actual
+                        if (username !== usernamePrincipal) {
+                            // Agregar un retraso de 3 segundos antes de reproducir el audio
+                            setTimeout(() => {
+                                playReceivedAudio(stream);
+                                removeBorderFromConctact();
+                            }, 200); // Retraso de 3 segundos en milisegundos
+                        }
+                    });
+
+                    // Función para reproducir el audio recibido
+                    function playReceivedAudio(audioData) {
+                        const audioBlob = new Blob([audioData], { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio();
+
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            audio.src = reader.result;
+
+                            // Agregar evento para agregar el borde verde cuando comienza la reproducción
+                            audio.addEventListener('play', function() {
+                                addBorderToConctact();
+                            });
+
+                            // Agregar evento para quitar el borde verde cuando termina la reproducción
+                            audio.addEventListener('ended', function() {
+                                removeBorderFromConctact();
+                            });
+
+                            // Agregar eventos para manejar errores de reproducción
+                            audio.onerror = function(event) {
+                                console.error('Error al reproducir el audio:', event);
+                                console.error('Audio URL:', audioUrl);
+                                removeBorderFromConctact(); // Asegúrate de quitar el borde en caso de error
+                            };
+
+                            // Reproducir el audio
+                            audio.play().catch(error => {
+                                console.error('Error al intentar reproducir el audio:', error);
+                                removeBorderFromConctact(); // Asegúrate de quitar el borde en caso de error
+                            });
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    }
+
+                    // Función para crear un elemento de participante con avatar y nombre
+                    function createParticipantElement(name) {
+                        const participant = document.createElement('div');
+                        participant.classList.add('participant');
+
+                        const avatarDiv = document.createElement('div');
+                        avatarDiv.classList.add('avatar2');
+                        avatarDiv.textContent = name.charAt(0);
+                        participant.appendChild(avatarDiv);      
+
+                        const usernameSpan = document.createElement('span');
+                        usernameSpan.classList.add('name');
+                        usernameSpan.textContent = name;
+                        participant.appendChild(usernameSpan);
+
+                        return participant;
+                    }
+
+                    // Funciones para crear los botones de colgar, silenciar y ensordecer
+                    function createHangupButton() {
+                        const button = document.createElement('button');
+                        button.innerHTML = '<i class="fa-solid fa-phone-slash"></i>';
+                        button.classList.add('hangup-button');
+                        button.addEventListener('click', () => {
+                            // Aquí puedes agregar la lógica para colgar la llamada
+                            socket.emit('hangup', roomName)
+                        });
+                        return button;
+                    }
+
+                    function createMuteButton() {
+                        const button = document.createElement('button');
+                        button.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                        button.classList.add('mute-button');
+                        button.addEventListener('click', () => {
+                            // Alternar el estado de isMuted
+                            isMuted = !isMuted;
+
+                            if (isMuted) {
+                                console.log("Silenciado");
+                                // Eliminar el borde del avatar
+                                removeBorderFromAvatar();
+                            } else {
+                                console.log("No silenciado");
+                                // Comenzar la captura de audio
+                                startAudioCapture();
+                            }
+                        });
+                        return button;
+                    }
+                    
+                    document.getElementById('form').addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        sendFilesAndMessages();
+                    });
+
+                    document.getElementById('send-button').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        sendFilesAndMessages();
+                    });
+
+                    document.getElementById('file-input').addEventListener('change', function() {
+                        const file = this.files[0];
+                        const filePreview = document.getElementById('file-preview');
+                        const fileIcon = document.getElementById('file-icon');
+                        const fileName = document.getElementById('file-name');
+
+                        if (file) {
+                            filePreview.style.display = 'inline-flex';
+                            fileName.textContent = file.name;
+
+                            const fileExtension = file.name.split('.').pop().toLowerCase();
+                            const iconMapping = {
+                                'pdf': 'pdf.png',
+                                'rar': 'rar.png',
+                                'jpg': 'jpg.png',
+                                'jpeg': 'jpg.png',
+                                'png': 'png.png'
+                            };
+
+                            fileIcon.src = iconMapping[fileExtension] ? 'imagenes/' + iconMapping[fileExtension] : 'imagenes/default.png';
+                        } else {
+                            filePreview.style.display = 'none';
+                        }
+                    });
+
+                    function sendFilesAndMessages() {
+                        const mensaje = document.getElementById('input').value;
+                        const fileInput = document.getElementById('file-input');
+                        const file = fileInput.files[0];
+                        const now = new Date();
+
+                        // Formatea la fecha y hora en el formato de fecha y hora de MySQL (YYYY-MM-DD HH:MM:SS)
+                        const fechaHoraMySQL = now.toISOString().slice(0, 19).replace('T', ' ');
+
+                        if (roomName !== '') {
+                            if (mensaje.trim() !== '' || file) {
+                                const data = {
+                                    mensaje: mensaje.trim(),
+                                    roomId: roomName,
+                                    horaActual: fechaHoraMySQL,
+                                    conversacionId: conversacionId
+                                };
+
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        data.file = e.target.result;
+                                        data.fileName = file.name;
+                                        data.fileType = file.type;
+                                        console.log("ssss");
+                                        socket.emit('mensaje', data);
+                                        limpiarInputs();
+                                    };
+                                    reader.readAsDataURL(file);
+                                } else {
+                                    socket.emit('mensaje', data);
+                                    limpiarInputs();
+                                }
+                            }
+                        }
+                    }
+
+                    function limpiarInputs() {
+                        document.getElementById('input').value = "";
+                        document.getElementById('file-input').value = "";
+                        document.getElementById('file-preview').style.display = 'none';
+                    }
+
+                    const addFriendButton = document.querySelector('.add-friend-button');
+
+                    addFriendButton.addEventListener('click', () => {
+                    // Mostrar el cuadro de diálogo modal
+                    Swal.fire({
+                        title: 'Agregar amigo',
+                        html: '<input id="friend-name" class="swal2-input" placeholder="Nombre del amigo">',
+                        showCancelButton: true,
+                        confirmButtonText: 'Enviar',
+                        cancelButtonText: 'Cancelar',
+                        showLoaderOnConfirm: true,
+                        preConfirm: () => {
+                            // Obtener el valor del campo de entrada
+                            const friendName = document.getElementById('friend-name').value;
+                            console.log(friendName);
+                            // Enviar la solicitud para agregar el amigo
+                            return fetch('/add_friend', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                 body: JSON.stringify({
+                                    usernamePrincipal: usernamePrincipal,
+                                    friendName: friendName
+                                })
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Error al agregar amigo');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Manejar la respuesta del servidor después de agregar el amigo
+                                Swal.fire({
+                                    title: 'Amigo agregado',
+                                    text: `Se ha agregado a ${data.friendName} como amigo.`,
+                                    icon: 'success'
+                                })
+                                .then(()=>{
+                                    window.location='/chat'
+                                });
+                            })
+                            .catch(error => {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: error.message,
+                                    icon: 'error'
+                                    });
+                                });
+                            }
+                        });
+                    });
+                    
+                     function conversacion_id(usuarioPrincipal, contactoUsername) {
+                        // Hacer la solicitud fetch al servidor y devolver una promesa
+                        return fetch('/conversacion_id', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                usuarioPrincipal: usuarioPrincipal,
+                                contactoUsername: contactoUsername
+                            })
+                        })
+                       .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error al cargar los mensajes');
+                        }
+                        return response.json();
+                    })                        
+                    .then(data => {
+                        // Agregar cada mensaje al contenedor de mensajes en orden inverso
+                        for (let i = data.length - 1; i >= 0; i--) {
+                            const res = data[i];
+                            conversacionId = res.conversacion_id;
+                        }
+                        return conversacionId; // Devuelve el ID de conversación
+                    })
+                    .catch(error => console.error('Error al cargar los mensajes:', error));
+                    }
+                    
+                    function cargarMensajes(usuarioPrincipal, contactoUsername) {
+                    // Hacer la solicitud fetch al servidor
+                    fetch('/mensajes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            usuarioPrincipal: usuarioPrincipal,
+                            contactoUsername: contactoUsername
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error al cargar los mensajes');
+                        }
+                        return response.json();
+                    })                        
+                    .then(data => {
+                        const messageBox = document.querySelector('.message-box');
+                        // Limpiar el contenedor de mensajes antes de agregar los nuevos
+                        messageBox.innerHTML = '';
+
+                        let fechaAnterior = null; // Variable para almacenar la fecha del mensaje anterior
+                        
+                        
+                        // Agregar cada mensaje al contenedor de mensajes en orden inverso
+                        for (let i = data.length - 1; i >= 0; i--) {
+                            const mensaje = data[i];
+                            const fechaEnvio = new Date(mensaje.fecha_envio);
+                            const dia = fechaEnvio.getDate();
+                            const numeroMes = fechaEnvio.getMonth();
+                            const año = fechaEnvio.getFullYear();
+
+                            // Formatear la fecha como una cadena legible
+                            const fechaFormateada = `${dia} de ${nombresMeses[numeroMes]} de ${año}`;
+
+                            // Agregar la línea de separación si es un nuevo día
+                            if (fechaAnterior !== fechaFormateada) {
+                                const divSeparador = document.createElement('div');
+                                divSeparador.innerHTML = `<br><p class="separator">${fechaFormateada}</p><br>`;
+                                messageBox.appendChild(divSeparador);
+                                fechaAnterior = fechaFormateada; // Actualizar la fecha anterior
+                            }
+
+                            // Obtener los componentes de la hora
+                            const horas = fechaEnvio.getHours().toString().padStart(2, '0'); // Obtener las horas en formato de dos dígitos
+                            const minutos = fechaEnvio.getMinutes().toString().padStart(2, '0'); // Obtener los minutos en formato de dos dígitos
+                            const segundos = fechaEnvio.getSeconds().toString().padStart(2, '0'); // Obtener los segundos en formato de dos dígitos
+
+                            // Formatear la hora como una cadena HH:mm:ss
+                            const horaFormateada = `${horas}:${minutos}:${segundos}`;
+                                                                                
+                            if(mensaje.nombre_usuario === usuarioPrincipal){
+                                    // Crear el elemento del mensaje
+                                    const divMensaje = document.createElement('div');
+                                    divMensaje.classList.add('message');
+                                    divMensaje.classList.add(`user1`);
+                                    divMensaje.innerHTML = `
+                                        <h4 class="content">
+                                            <p class="mensaje">${mensaje.contenido}</p>
+                                            <br>
+                                            <p class="timestamp">${horaFormateada}</p>
+                                        </h4>
+                                    `;
+                                    messageBox.appendChild(divMensaje);
+                                }
+                                else if(mensaje.nombre_usuario === contactoUsername){
+                                    // Crear el elemento del mensaje
+                                    const divMensaje = document.createElement('div');
+                                    divMensaje.classList.add('message');
+                                    divMensaje.classList.add(`user2`);
+                                    divMensaje.innerHTML = `
+                                        <h4 class="content">
+                                            <p class="mensaje">${mensaje.contenido}</p>
+                                            <br>
+                                            <p class="timestamp">${horaFormateada}</p>
+                                        </h4>
+                                    `;
+                                    messageBox.appendChild(divMensaje);
+                                }   
+                            }
+                            messageBox.scrollTop = messageBox.scrollHeight;
+                    })
+                    .catch(error => console.error('Error al cargar los mensajes:', error));
+                }
+
+                // Array de nombres de mes
+                const nombresMeses = [
+                    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                ];
+                    
+                    fetch('/contactos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            usuario : usernamePrincipal
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error al cargar los mensajes');
+                        }
+                        return response.json();
+                    })                        
+                    .then(data => {
+                        const userList = document.querySelector('.user-list');
+                        userList.innerHTML = ''; // Limpiar la lista de usuarios antes de agregar los nuevos
+
+                        data.forEach(contacto => {
+                            const userDiv = document.createElement('div');
+                            userDiv.classList.add('user');
+
+                            // Crear contenedor para avatar (vacío)
+                            const avatarDiv = document.createElement('div');
+                            avatarDiv.classList.add('avatar');
+                            userDiv.appendChild(avatarDiv);
+
+                            const usernameSpan = document.createElement('span');
+                            usernameSpan.classList.add('username');
+                            usernameSpan.textContent = contacto.nombre_usuario;
+                            userDiv.appendChild(usernameSpan);
+
+                            userList.appendChild(userDiv);
+                        });
+                         // Obtener el elemento del mensaje box
+                        const messageBox = document.querySelector('.message-box');
+
+                        // Desplazar el scroll del mensaje box al final
+                        messageBox.scrollTop = messageBox.scrollHeight;
+                        document.querySelectorAll('.user').forEach(user => {
+                            const username = user.querySelector('.username').textContent;
+                            const firstLetter = username.charAt(0);
+                            user.querySelector('.avatar').textContent = firstLetter;
+                        });
+                    })
+                    .catch(error => console.error('Error al cargar los contactos:', error));
+                });
+            </script>
+            
+    </div>
+</body>
+</html>

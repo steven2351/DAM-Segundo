@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta</title>
+    <link rel="stylesheet" href="/css/styles2.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Crear Cuenta</h2>
+        <form id="registerForm" action="/register" method="POST">
+            <input type="text" name="name" placeholder="Nombre completo" required>
+            <input type="text" name="username" placeholder="Nombre de usuario" required>
+            <input type="email" name="email" placeholder="Correo electrónico" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <input type="password" name="confirm_password" placeholder="Confirmar contraseña" required>
+            <button type="submit">Registrarse</button>
+        </form>
+        <p>¿Ya tienes una cuenta? <a href="/">Iniciar sesión</a></p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+    <% if (typeof alert != "undefined")  { %>
+         <script>
+         Swal.fire({
+           title:'<%= alertTitle %>',
+           text:'<%= alertMessage %>',
+           icon:'<%= alertIcon %>',
+           showConfirmButton: <%= showConfirmButton %>,
+           timer: <%= timer %>
+         }).then(()=>{
+           window.location='/<%= ruta %>'
+         })
+         </script>
+    <% } %>
+
+    <script>
+        function validatePasswords() {
+            var password = document.getElementById("password").value;
+            var confirm_password = document.getElementById("confirm_password").value;
+
+            if (password !== confirm_password) {
+                alert("Las contraseñas no coinciden");
+                return false; // Evita que se envíe el formulario si las contraseñas no coinciden
+            }
+            return true; // Permite que se envíe el formulario si las contraseñas coinciden
+        }
+    </script>
+</body>
+</html>
