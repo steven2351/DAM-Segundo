@@ -12,7 +12,7 @@ const io = new socketIo.Server(server);
 
 const PORT = 3000;
 
-// Configura la conexión a la base de datos MySQL
+// Set up the connection to the MySQL database
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'steven',
@@ -20,109 +20,125 @@ const connection = mysql.createConnection({
     database: 'spkeasex'
 });
 
+const users = {};
 
-// Cuando un cliente se conecta al socket
+// When a client connects to the socket
 io.on('connection', async (socket) => {
     console.log('a user has connected!')
 
 
-    const username = socket.handshake.auth.username ?? 'anonymous'
-
-    // Manejar evento para unirse a una sala
+    const username = socket.handshake.auth.username;
+    users[username] = socket.id;
+     console.log('Current participants:', Object.keys(users));
+    // To handle the event for joining a room
     socket.on('joinRoom', ({ roomId }) => {
         socket.join(roomId);
-        // Emitir evento de unión a sala a todos los clientes en la sala
+        // Emit a room join event to all clients in the room
         io.to(roomId).emit('user_joined_room', { username, roomId });
-        console.log(`${username} se ha unido a la sala ${roomId}`);
+        console.log(`${username} has joined room ${roomId}`);
         
     });
 
-    // Manejar evento para salir de una sala
+    // To handle the event for leaving a room
     socket.on('leaveRoom', ({ roomId }) => {
         socket.leave(roomId);
-        console.log(`${username} salió de la sala ${roomId}`);
+        console.log(`${username} left the room ${roomId}`);
     });
 
     
     socket.on('mensaje', ({ mensaje, roomId, horaActual, conversacionId, file, fileName, fileType }) => {
-    let result;
-    try {
-        result = `INSERT INTO mensajes (id, contenido, fecha_envio, remitente_id, conversacion_id)
-                  VALUES (NULL, '${mensaje}', '${horaActual}', 
-                          (SELECT id FROM usuarios WHERE nombre_usuario = '${username}'), 
-                          '${conversacionId}')`;
+        const messageData = { mensaje, username, horaActual, file, fileName, fileType };
+        io.to(roomId).emit('chat message', messageData);
+        let result;
+        try {
+            let contenidoMensaje = connection.escape(mensaje);
 
-        // Ejecutar la consulta SQL
-        connection.query(result, (error, results) => {
-            if (error) {
-                console.error('Error al ejecutar la consulta:', error);
+            // Add the file to the message content if it exists
+            if (file) {
+                const fileLink = ` <a href="${file}" download="${fileName}">${fileName}</a>`;
+                contenidoMensaje += connection.escape(fileLink);
             }
-        });
-    } catch (e) {
-        console.error(e);
-        return;
-    }
 
-    const messageData = { mensaje, username, horaActual, file, fileName, fileType };
-    io.to(roomId).emit('chat message', messageData);
-    console.log(`Mensaje enviado a la sala ${roomId}: ${mensaje}`);
-});
+            result = `INSERT INTO mensajes (id, contenido, fecha_envio, remitente_id, conversacion_id)
+                      VALUES (NULL, ${contenidoMensaje}, '${horaActual}', 
+                              (SELECT id FROM usuarios WHERE nombre_usuario = '${username}'), 
+                              '${conversacionId}')`;
+
+            // Execute the SQL query
+            connection.query(result, (error, results) => {
+                if (error) {
+                    console.error('Error executing the query: ', error);
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            return;
+        }
+
+        console.log(`Message sent to the room ${roomId}: ${mensaje}`);
+    });
     
-    // Escuchar evento para iniciar una llamada en una sala específica
+    // Listen for event to initiate a call in a specific room
     socket.on('startCall', (roomName, contactoUsername) => {
-        // Unirse a la sala especificada
+        // Join the specified room
         socket.join(roomName);
-        console.log(`Usuario ${username} inició una llamada en la sala ${roomName}`);
+        console.log(`User ${username} initiated a call in room ${roomName}`);
 
-        // Emitir evento a todos los clientes en la sala para notificar la llamada
+        // Emit event to all clients in the room to notify the call
         io.to(roomName).emit('callStarted', username, contactoUsername);
     });
     
     socket.on('startVideoCall', (roomName, contactoUsername) => {
-        // Unirse a la sala especificada
+        // Join the specified room
         socket.join(roomName);
-        console.log(`Usuario ${username} inició una llamada en la sala ${roomName}`);
+        console.log(`User ${username} initiated a videocall in room ${roomName}`);
 
-        // Emitir evento a todos los clientes en la sala para notificar la llamada
+        // Emit event to all clients in the room to notify the call
         io.to(roomName).emit('videocallStarted', username, contactoUsername);
     });
     
     socket.on('audioStream', (data) => {
         const { stream, roomId } = data;
         socket.join(roomId);
-        // Reenviar el stream de audio a todos los clientes en la misma room excepto al cliente que lo envió
+        // Forward the audio stream to all clients in the same room except the client who sent it
         io.to(roomId).emit('audioReceived', stream, username);
     });
     
-    // Reenviar los datos recibidos a todos los clientes conectados
-        socket.on('mediaStream', (data) => {
-            const { data: mediaData, roomId, username } = data;
-        socket.to(roomId).emit('mediaStreamReceived', mediaData, username);
+    // Forward the received data to all connected clients
+    socket.on('mediaStream', (data) => {
+        const { data: mediaData, roomId, contactoUsername } = data;
+            console.log(`MediaStream received for ${contactoUsername}`);
+        const recipientSocketId = users[contactoUsername];
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('mediaStreamReceived', mediaData, contactoUsername);
+        } else {
+            console.error(`User ${contactoUsername} not found `);
+        }
     });
 
     
     socket.on('hangup', (roomId) => {
-        // Reenviar el stream de audio a todos los clientes en la misma room excepto al cliente que lo envió
+        // Forward the audio stream to all clients in the same room except the client who sent it
         io.to(roomId).emit('callFinished', username);
     });
     
-    // Manejar evento de desconexión del usuario
+    // To handle the user disconnection event
     socket.on('disconnect', () => {
-        console.log(`${username} se ha desconectado del chat`);
-
-        // Emitir evento de desconexión de usuario a todos los clientes conectados
-        io.emit('user_disconnected', username);
+        if (users[username]) {
+            console.log(`${username} has disconnected from the chat`);
+            delete users[username]; // Remove the user from the registry upon disconnection
+            // Emit user disconnection event to all connected clients
+            io.emit('user_disconnected', username);
+        }
     });
-    
-   
 
 });
 
 
-//5 - Establecemos el motor de plantillas
+// Set up the template engine
 app.set('view engine', 'ejs');
 
-//7- variables de session
+// Session variables
 const session = require('express-session');
 app.use(session({
 	secret: 'secret',
@@ -130,16 +146,15 @@ app.use(session({
     saveUninitialized: false
 }));
 
-// Middleware para analizar los cuerpos de las solicitudes HTTP
+// Middleware to parse HTTP request bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Middleware para servir archivos estáticos desde el directorio 'public'
+// Middleware for serving static files from the 'public' directory
 app.use(express.static('/public'));
 app.use(express.static(__dirname + '/public'));
 app.use('/socket.io', express.static(path.join(__dirname, 'node_modules', 'socket.io', 'client-dist')));
 
-// Ruta para servir el archivo index.html
 app.get('/', (req, res) => {
     res.render('index');
 });
@@ -148,7 +163,7 @@ app.get('/register', (req, res) => {
 });
 
 
-// Ruta para obtener los contactos del usuario con id 1
+// Route to get the contacts of the user
 app.post('/contactos', (req, res) => {
     const usuario = req.body.usuario;
     const query = `
@@ -161,8 +176,8 @@ app.post('/contactos', (req, res) => {
 
     connection.query(query, (error, results, fields) => {
         if (error) {
-            console.error('Error al obtener los contactos:', error.message);
-            res.status(500).send('Error interno del servidor');
+            console.error('Error while retrieving contacts: ', error.message);
+            res.status(500).send('Internal server error');
             return;
         }
         res.json(results);
@@ -174,7 +189,6 @@ app.post('/mensajes', (req, res) => {
     const usuarioPrincipal = req.body.usuarioPrincipal;
     const contactoUsername = req.body.contactoUsername;
 
-    // Consulta SQL
     const query = `
         SELECT * 
         FROM mensajes
@@ -187,13 +201,13 @@ app.post('/mensajes', (req, res) => {
             p2.usuario_id = (SELECT id FROM usuarios WHERE nombre_usuario = '${contactoUsername}')
         ORDER BY mensajes.fecha_envio DESC;
     `;
-    // Ejecutar la consulta SQL
+    
     connection.query(query, (error, results) => {
         if (error) {
-            console.error('Error al ejecutar la consulta:', error);
-            res.status(500).json({ error: 'Error al cargar los mensajes' });
+            console.error('Error executing the query: ', error);
+            res.status(500).json({ error: 'Error loading messages' });
         } else {
-            res.json(results); // Enviar los resultados de la consulta como respuesta
+            res.json(results); // Send the query results as response
         }
     });
 });
@@ -202,7 +216,6 @@ app.post('/conversacion_id', (req, res) => {
     const usuarioPrincipal = req.body.usuarioPrincipal;
     const contactoUsername = req.body.contactoUsername;
 
-    // Consulta SQL
     const query = `
         SELECT conversacion_id
         FROM participantes
@@ -215,18 +228,18 @@ app.post('/conversacion_id', (req, res) => {
         ORDER BY COUNT(DISTINCT usuario_id) DESC
         LIMIT 1;
     `;
-    // Ejecutar la consulta SQL
+    
     connection.query(query, (error, results) => {
         if (error) {
-            console.error('Error al ejecutar la consulta:', error);
-            res.status(500).json({ error: 'Error al cargar los mensajes' });
+            console.error('Error executing the query:', error);
+            res.status(500).json({ error: 'Error loading conversation id' });
         } else {
-            res.json(results); // Enviar los resultados de la consulta como respuesta
+            res.json(results); // Send the query results as response
         }
     });
 });
 
-//Método para la REGISTRACIÓN
+// Method for registration
 app.post('/register', async (req, res)=>{
     const name = req.body.name;
     const username = req.body.username;
@@ -258,7 +271,7 @@ app.post('/register', async (req, res)=>{
 
 
 
-//Metodo para la autenticacion
+// Method for authentication
 app.post('/auth', async (req, res)=> {
     const username = req.body.username;
     const password = req.body.password;    
@@ -274,7 +287,7 @@ app.post('/auth', async (req, res)=> {
 				res.render('index', {
                         alert: true,
                         alertTitle: "Error",
-                        alertMessage: "USUARIO y/o PASSWORD incorrectas",
+                        alertMessage: "Incorrect username or password",
                         alertIcon:'error',
                         showConfirmButton: true,
                         timer: false,
@@ -285,8 +298,8 @@ app.post('/auth', async (req, res)=> {
                 req.session.name = results[0].nombre_usuario;
 				res.render('index', {
 					alert: true,
-					alertTitle: "Conexión exitosa",
-					alertMessage: "¡LOGIN CORRECTO!",
+					alertTitle: "Successful Connection",
+					alertMessage: "Login Successful!",
 					alertIcon:'success',
 					showConfirmButton: false,
 					timer: 1500,
@@ -302,7 +315,6 @@ app.post('/add_friend', (req, res) => {
     const usernamePrincipal = req.body.usernamePrincipal;
     const friendName = req.body.friendName;
     
-    // Aquí puedes realizar la lógica para agregar el amigo en tu base de datos o donde corresponda
     const query = `
       INSERT INTO contactos (usuario_id, contacto_usuario_id, es_grupo)
       VALUES (
@@ -311,20 +323,20 @@ app.post('/add_friend', (req, res) => {
         0
       );
     `;
-    // Ejecutar la consulta SQL
+    
     connection.query(query, (error, results) => {
         if (error) {
-            console.error('Error al insertar contacto:', error);
+            console.error('Error while inserting contact: ', error);
         } else {
             res.json({ friendName: friendName });
         }
     });
 });
 
-//Método para controlar que está auth en todas las páginas
+// Method to ensure that authentication is present on all pages
 app.get('/chat', (req, res) => {
     if (req.session.loggedin) {
-        // Renderiza la vista 'chat'
+        // Render the 'chat' view
         res.render('chat', {
             login: true,
             name: req.session.name
@@ -338,22 +350,22 @@ app.get('/chat', (req, res) => {
     res.end();
 });
 
-//función para limpiar la caché luego del logout
+// Function to clear the cache after logout
 app.use(function(req, res, next) {
     if (!req.user)
         res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
     next();
 });
 
- //Logout
-//Destruye la sesión.
+//Logout
+// Destroy the session.
 app.get('/logout', function (req, res) {
 	req.session.destroy(() => {
-	  res.redirect('/') // siempre se ejecutará después de que se destruya la sesión
+	  res.redirect('/') // It will always execute after the session is destroyed
 	})
 });
 
 
 server.listen(PORT, () => {
-    console.log(`Servidor iniciado en puerto: ${PORT}`);
+    console.log(`Server started on port: ${PORT}`);
 });

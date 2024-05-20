@@ -1,0 +1,336 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    width: 100%;
+    height: 100%;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/*  Sidebar stylesc*/
+.sidebar {
+    width: 12%; /* Sidebar width */
+    background-color: #36393f;
+    color: #fff;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Add scroll if necessary */
+}
+.add-friend-button{
+    margin-bottom: 10px;
+    background-color: #36393f; 
+    color: #fff; 
+    border: none;
+    width:100%;
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    outline: none; /* "Remove the border on click */
+    transition: background-color 0.3s ease; /* Smooth transition of 0.3 seconds */
+}
+.add-friend-button:hover,.user:hover {
+    background-color: #242424; /* Lighter background color on hover */
+}
+.user {
+    display: flex;
+    align-items: center; /* Center elements vertically */
+    margin:10px;
+    padding: 6px;
+    width: 75%;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Smooth transition of background color */
+}
+
+.user-list {
+    overflow-y: auto; 
+    flex: 1;
+}
+
+.user-selected{
+    margin-top:16px;
+    border-top:1px solid black;
+    background-color: #000;
+}
+.avatar {
+    width: 20%; /* Adjust the size of the avatar */
+    height: 20%; /* Adjust the size of the avatar */
+    border-radius: 50%;
+    background-color: #7289da;
+    display: flex;
+    margin-right:5px;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    color: #fff;
+    margin-bottom: 5px; /* Adjust the space between the avatar and the username */
+    text-transform: uppercase; /* Convert the username to uppercase */
+}
+.username {
+    font-weight: bold;
+    flex-shrink: 1; /* Allow the element to shrink if necessary */
+    overflow: hidden; /* Hide content that doesn't fit */
+    text-overflow: ellipsis; /* Display ellipsis (...) when content is truncated */
+    white-space: nowrap; /* Prevent text from wrapping onto multiple lines */
+    margin-left:0px;
+    font-size: 12px; /* Font size of the username */
+    max-width: 65%; /* Maximum width for the username */
+    min-width: 30%;
+} 
+.participant{
+    height: 10%;
+    display: inline-table;
+    margin-left: 20px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.avatar2 {
+    width: 60px; /* Avatar width */
+    height: 60px; /* Avatar height */
+    border-radius: 50%; /* Use rounded border to create a circular avatar */
+    background-color: #7289da; /* Background color of the avatar */
+    margin-left: initial;
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    font-size: 20px;
+    color: #fff; ç
+}
+.name {
+    display: none;
+} 
+/* Chat area styles */
+.chat {
+    flex: 1;
+    display: flex;
+    background-color: #fff;
+    flex-direction: column;
+    overflow-y: auto; /* Add scroll if necessary */
+}
+
+/* Styles for the call bar */
+.call-bar {
+    position: relative; /* Add relative position to the absolute video-container */
+    background-color: #36393f; /* Background color of the call bar */
+    padding: 15px; 
+    text-align: right;
+    align-items: center; 
+    z-index: 1; /* Ensure that the call bar is positioned below the video */
+}
+/* Styles for the call buttons */
+.call-button,
+.video-call-button {
+    background-color: #7289da; 
+    color: #fff;
+    border: none;
+    border-radius: 50%; /* Round buttons */
+    width: 40px; 
+    height: 40px;
+    margin-left: 5px; /* Spacing between the buttons */
+    cursor: pointer;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    transition: background-color 0.3s ease; 
+}
+.hangup-button,
+.mute-button {
+    background-color: lightslategrey; 
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px; 
+    height: 40px; 
+    margin-left: 15px;
+    cursor: pointer;
+    float:right;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center; 
+    transition: background-color 0.3s ease; 
+}
+
+/* Styles for call buttons on mouse hover */
+.call-button:hover,
+.video-call-button:hover {
+    background-color: #f0f0f0; /* Background color on mouse hover */
+}
+.message-box {
+    background-color: #fff;
+    height:100%;
+    overflow-y: auto; /* Add scroll if necessary */
+}
+
+
+/* Styles for user 1 messages */
+.message.user1 {
+    text-align: right; /* Align text to the right */
+    direction: ltr; /* Set the text direction from right to left */
+    
+}
+
+/* Styles for user 2 messages */
+.message.user2 {
+    text-align: left; /* Align text to the left */
+    direction: ltr; /* Set the text direction from left to right */
+    
+}
+/* Styles for the message content of user 1 */
+.message.user1 .content {
+    background-color: #7289da; /* Background color for user 1 */
+}
+
+/* Styles for the message content of user 2 */
+.message.user2 .content {
+    background-color: #aaa; /* Background color for user 2 */
+}
+/* Styles for the message content */
+.message .content {
+    padding: 4px;
+    margin: 10px;
+    border-radius: 20px; 
+    color: #fff;
+    font-weight:normal;
+    display: inline-block;
+    max-width: 75%;
+    min-width: 12%;
+}
+.mensaje{
+    text-align:justify;
+    margin-bottom: 10px;
+    float:left;
+}
+.message .username {
+    text-align:right;
+    font-weight: bold;
+    margin:15px;
+    color:black;
+}
+
+/* Styles for the message input area */
+.message-input {
+    display: flex;
+    align-items: center;
+    padding: 30px;
+    background-color: #fff;
+}
+
+.message-input input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: 0px;
+    margin-right: 0px;
+}
+
+.message-input button {
+    padding: 12px 30px;
+    height:100%;
+    border: none;
+    border-radius: 0px;
+    background-color: #7289da;
+    color: #fff;
+    cursor: pointer;
+}
+.timestamp {
+    font-size: 12px;
+    color: #fff;
+    text-align:right;
+}
+
+.separator {
+    text-align: center; 
+    width: 100%; 
+    margin: 0; 
+    padding: 0; 
+    display: block; 
+    border-bottom: 1px solid black;
+}
+
+.file-preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 12px;
+}
+#file-label{
+    width: 50px;
+}
+#file-icon {
+    width: 50px; 
+    height: auto; /* Use automatic height to maintain image proportion */
+    margin-bottom: 5px; 
+}
+
+#file-name {
+    text-align: center;
+    max-width: 100px; 
+    overflow: hidden; /* Hide content that overflows the maximum width */
+    text-overflow: ellipsis;
+    white-space: nowrap; /* Prevent text from wrapping onto multiple lines */
+}
+
+.context-menu {
+    display: none;
+    position: absolute;
+    background-color: grey;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 8px 0;
+    z-index: 1000;
+}
+
+.context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.context-menu-item:hover {
+    background-color: darkgrey;
+}
+
+/* Additional styles for file download links */
+.file-download {
+    display: inline-block;
+    margin-top: 5px;
+    color: #fff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.file-download:hover {
+    color: #fff;
+}
+
+
+.video-container {
+    position: absolute; /* Set absolute position */
+    top: 0;
+    left: 0;
+    width: calc(100% - 30px); /* Subtract double the padding of the call bar to prevent the video-container from exceeding the bounds */
+    height: calc(100% - 30px); /* Subtract double the padding of the call bar to ensure that the video-container does not exceed the boundaries */
+    z-index: 2; /* Ensure that the video is positioned above the call bar */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-container video {
+    width: 450px;
+    height: 75%;
+}
+.video-container canvas {
+    width: 260px;
+    height: 73%;
+}
+a {
+    display: inline; /* Remove the display property so that the links are displayed inline */
+    color: #ffffff;
+}

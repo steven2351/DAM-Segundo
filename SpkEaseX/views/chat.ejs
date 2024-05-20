@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpkEaseX</title>
+    <link rel="stylesheet" href="css/styles3.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">         
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/opus-recorder/8.0.5/recorder.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <button class="add-friend-button"><i class="fa-solid fa-user-plus"></i></button>
+            <div class="user-list">
+                
+               
+            </div>
+            <div class="context-menu" id="contextMenu">
+                <div class="context-menu-item" id="logoutOption">Log out</div>
+            </div>
+            <div class="user-selected">
+                <div class="user">
+                    <div class="avatar"></div>
+                    <span class="username"><%= name %></span>
+                </div>
+            </div>
+            
+        </div>
+        <div class="chat">
+            <div class="call-bar">
+                <button class="call-button"><i class="fa-solid fa-phone-volume"></i></button>
+                <button class="video-call-button"><i class="fa-solid fa-video"></i></button>
+            </div>
+            <div class="message-box">
+               
+            </div>
+            <form id="form">
+                <div class="message-input">
+                    <div id="file-preview" style="display: none;">
+                        <div class="file-preview-container">
+                            <img id="file-icon" src="" alt="File icon">
+                            <span id="file-name"></span>
+                        </div>
+                    </div>
+                    <input id="file-input" type="file" style="display: none;"> 
+                    <label for="file-input" id="file-label" style="margin-left:5px;"><i class="fa-sharp fa-solid fa-paperclip"></i></label> 
+                    <input id="input" type="text" placeholder="Write your message here...">
+                    <button id="send-button" type="submit">Send</button>
+                </div>
+            </form>
+        </div>
+                        
+        <script src="js/main.js"></script>            
+    </div>
+</body>
+</html>
